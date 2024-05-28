@@ -1,5 +1,5 @@
 {
-    "name" : "ruiMi",
+    "name" : "睿米心身",
     "appid" : "__UNI__FB4F15D",
     "description" : "",
     "versionName" : "1.0.0",
@@ -56,5 +56,17 @@
         },
         "usingComponents" : true
     },
-    "vueVersion" : "2"
+    "vueVersion" : "2",
+    "h5" : {
+        "title" : "睿米心身",
+        "unipush" : {
+            "enable" : false
+        },
+        "router" : {
+            "base" : "/ruiMi"
+        },
+        "devServer" : {
+            "https" : true
+        }
+    }
 }

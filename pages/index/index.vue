@@ -4,36 +4,25 @@
 			<view class="topTitle">
 				<u--image class="topTitleImg1" :showLoading="topTitleImg1.imgShowLoading" :src="topTitleImg1.imgSrc"
 					:width="topTitleImg1.imgWidth" :height="topTitleImg1.imgHeight"></u--image>
-				<u--image class="topTitleImg2" :showLoading="topTitleImg2.imgShowLoading" :src="topTitleImg2.imgSrc"
-					:width="topTitleImg2.imgWidth" :height="topTitleImg2.imgHeight"></u--image>
+				<u--text text="睿米心身" :bold="true" color="#ffffff" size="35px"></u--text>
 			</view>
 			<view class="challengeName">
-				<u--image class="challengeNameImg1" :showLoading="challengeNameImg1.imgShowLoading"
-					:src="challengeNameImg1.imgSrc" :width="challengeNameImg1.imgWidth"
-					:height="challengeNameImg1.imgHeight"></u--image>
-				<u--image class="challengeNameImg2" :showLoading="challengeNameImg2.imgShowLoading"
-					:src="challengeNameImg2.imgSrc" :width="challengeNameImg2.imgWidth"
-					:height="challengeNameImg2.imgHeight"></u--image>
+				<u--text text="专注大神" :bold="true" color="#ffffff" size="30px"></u--text>
+				<u--text text="挑战赛" :bold="true" color="#ffc800" size="40px"></u--text>
 			</view>
 			<view class="challengeLevel">
-				<u-button :shape="challengeLevel.shape" :text="challengeLevel.text" :color="challengeLevel.color"
-					:icon="challengeLevel.iconUrl" :customStyle="challengeLevelCustomStyle"></u-button>
+				<u-button :shape="challengeLevel.shape" :color="challengeLevel.color" :icon="challengeLevel.iconUrl"
+					:customStyle="challengeLevelCustomStyle">{{challengeLevel.text}}</u-button>
 			</view>
 			<view class="challengeInfo">
-				<u--text :text="dataAbout.gameUserCount" :color="challengeInfo.color"
-					:size="challengeInfo.size"></u--text>
+				<text class="challengeInfoBase">当前已有</text>
+				<text class="challengeInfoCount">{{dataAbout.gameUserCount}}</text>
+				<text class="challengeInfoBase">人完成挑战</text>
 			</view>
 			<view class="challengeNum">
-				<u--image class="challengeNumImg1" :showLoading="challengeNumImg1.imgShowLoading"
-					:src="challengeNumImg1.imgSrc" :width="challengeNumImg1.imgWidth"
-					:height="challengeNumImg1.imgHeight"></u--image>
-
-				<u--image class="challengeNumImg2" :showLoading="challengeNumImg2.imgShowLoading"
-					:src="dataAbout.leaveGameCountImgUrl" :width="challengeNumImg2.imgWidth"
-					:height="challengeNumImg2.imgHeight"></u--image>
-				<u--image class="challengeNumImg3" :showLoading="challengeNumImg3.imgShowLoading"
-					:src="challengeNumImg3.imgSrc" :width="challengeNumImg3.imgWidth"
-					:height="challengeNumImg3.imgHeight"></u--image>
+				<text class="challengeNumBase">还剩</text>
+				<text class="challengeNumCount">{{dataAbout.leaveNum}}</text>
+				<text class="challengeNumBase">次挑战机会</text>
 			</view>
 			<view class="myChallengeInfo">
 				<view class="myChallengeInfoPer bestScore">
@@ -106,26 +95,8 @@
 				topTitleImg1: {
 					imgShowLoading: true,
 					imgSrc: "/static/ruiMi.png",
-					imgWidth: "26px",
-					imgHeight: "26px"
-				},
-				topTitleImg2: {
-					imgShowLoading: true,
-					imgSrc: "/static/huNanRuiMi.png",
-					imgWidth: "104px",
-					imgHeight: "26px"
-				},
-				challengeNameImg1: {
-					imgShowLoading: true,
-					imgSrc: "/static/zhuanZhuDaShen.png",
-					imgWidth: "144px",
-					imgHeight: "32px"
-				},
-				challengeNameImg2: {
-					imgShowLoading: true,
-					imgSrc: "/static/tiaoZhanSai.png",
-					imgWidth: "120px",
-					imgHeight: "40px"
+					imgWidth: "40px",
+					imgHeight: "40px",
 				},
 				challengeLevel: {
 					iconUrl: "/static/nanDu1.png",
@@ -137,24 +108,6 @@
 					text: "当前有9999人参与挑战！你也来吧",
 					color: "#ffffff",
 					size: "16px"
-				},
-				challengeNumImg1: {
-					imgShowLoading: true,
-					imgSrc: "/static/ninHaiYou.png",
-					imgWidth: "66px",
-					imgHeight: "22px"
-				},
-				challengeNumImg2: {
-					imgShowLoading: true,
-					imgSrc: "/static/num3.png",
-					imgWidth: "34px",
-					imgHeight: "34px"
-				},
-				challengeNumImg3: {
-					imgShowLoading: true,
-					imgSrc: "/static/ciTiaoZhan.png",
-					imgWidth: "110px",
-					imgHeight: "22px"
 				},
 				myChallengeInfo: {
 					imgShowLoading: true,
@@ -181,10 +134,11 @@
 					color: "linear-gradient(to right, rgb(66, 83, 216), rgb(213, 51, 186))"
 				},
 
-
-
 				challengeLevelCustomStyle: {
-					color: "#1afa29"
+					color: "#1afa29",
+					height: "50px",
+					width: "100px",
+					fontSize: "27px"
 				},
 
 				inputUserInfo: {
@@ -235,8 +189,8 @@
 				},
 				dataAbout: {
 					waitShow: false,
-					gameUserCount: "有0位玩家完成挑战！您也快来吧",
-					leaveGameCountImgUrl: "/static/num0.png",
+					gameUserCount: 0,
+					leaveNum: 0,
 					bestScore: "00:00",
 					bestRank: 0
 				},
@@ -297,8 +251,8 @@
 						'Authorization': 'Bearer ' + token
 					})
 					.then(data => {
-						this.dataAbout.gameUserCount = `有${data.data.gamerCount}位玩家完成挑战！您也快来吧`
-						this.dataAbout.leaveGameCountImgUrl = `/static/num${data.data.challengeNum}.png`
+						this.dataAbout.gameUserCount = data.data.gamerCount
+						this.dataAbout.leaveNum = data.data.challengeNum
 						var bestScore = data.data.bestScore
 						var m = String(Math.floor(bestScore / 60)).padStart(2, '0')
 						var s = String(bestScore % 60).padStart(2, '0')
@@ -332,7 +286,9 @@
 		height: 93vh;
 		/* background-color: blue; */
 		background-image: linear-gradient(to bottom, rgba(0, 0, 255, 0.5), rgba(124, 255, 2, 0.5)),
-			url("/static/bg.png");
+			url("../../static/bg.png");
+		background-position: center;
+		background-size: cover;
 	}
 
 
@@ -340,10 +296,12 @@
 		display: flex;
 		flex-direction: row;
 		align-items: center;
+		margin-top: 20px;
+		font-family: 'myFont', sans-serif;
 	}
 
 	.topTitleImg1 {
-		margin-right: 10rpx;
+		margin-right: 20rpx;
 	}
 
 
@@ -352,8 +310,51 @@
 		flex-direction: row;
 		align-items: center;
 		/* margin-top: 150rpx; */
+		font-family: 'myFont', sans-serif;
 	}
 
+	.challengeLevel {
+		font-family: 'myFont', sans-serif;
+		font-size: 200px;
+	}
+
+	.challengeInfo {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		font-family: 'myFont', sans-serif;
+	}
+
+	.challengeInfoBase {
+		font-size: 20px;
+		font-weight: bold;
+		color: #ffffff;
+	}
+
+	.challengeInfoCount {
+		font-size: 40px;
+		font-weight: bold;
+		color: #ffc800;
+	}
+
+	.challengeNum {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		font-family: 'myFont', sans-serif;
+	}
+
+	.challengeNumBase {
+		font-size: 20px;
+		font-weight: bold;
+		color: #ffffff;
+	}
+
+	.challengeNumCount {
+		font-size: 40px;
+		font-weight: bold;
+		color: #ffc800;
+	}
 
 	.challengeNum {
 		display: flex;
@@ -408,5 +409,12 @@
 	.buttonContainer {
 		margin-top: 30px;
 		width: 300rpx;
+	}
+
+	@font-face {
+		font-family: 'myFont';
+		src: url('../../static/ziti.ttf') format('truetype');
+		font-weight: normal;
+		font-style: normal;
 	}
 </style>
