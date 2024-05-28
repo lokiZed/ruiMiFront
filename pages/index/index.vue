@@ -20,13 +20,14 @@
 					:icon="challengeLevel.iconUrl" :customStyle="challengeLevelCustomStyle"></u-button>
 			</view>
 			<view class="challengeInfo">
-				<u--text :text="dataAbout.gameUserCount" :color="challengeInfo.color" :size="challengeInfo.size"></u--text>
+				<u--text :text="dataAbout.gameUserCount" :color="challengeInfo.color"
+					:size="challengeInfo.size"></u--text>
 			</view>
 			<view class="challengeNum">
 				<u--image class="challengeNumImg1" :showLoading="challengeNumImg1.imgShowLoading"
 					:src="challengeNumImg1.imgSrc" :width="challengeNumImg1.imgWidth"
 					:height="challengeNumImg1.imgHeight"></u--image>
-				
+
 				<u--image class="challengeNumImg2" :showLoading="challengeNumImg2.imgShowLoading"
 					:src="dataAbout.leaveGameCountImgUrl" :width="challengeNumImg2.imgWidth"
 					:height="challengeNumImg2.imgHeight"></u--image>
@@ -60,10 +61,10 @@
 			</view>
 			<view class="startChallenge">
 				<u-button :type="startChallenge.type" :shape="startChallenge.shape" :text="startChallenge.text"
-					:color="startChallenge.color" @click="inputUserInfo.show = true"></u-button>
+					:color="startChallenge.color" @click="gameButtonClick"></u-button>
 			</view>
 		</view>
-		<u-popup :show="inputUserInfo.show" style="width: 600rpx;">
+		<u-popup :show="inputUserInfo.show">
 			<view class="inputUserInfoContainier">
 				<view class="form">
 					<u--form labelPosition="left" :model="userInfo" ref="uForm">
@@ -89,10 +90,16 @@
 		<u-popup :show="dataAbout.waitShow" mode="center" :round="10" bgColor="transparent">
 			<u-loading-icon text="加载中" :vertical="true" size="100rpx" textSize="50rpx"></u-loading-icon>
 		</u-popup>
+		<u-toast ref="uToast" />
 	</view>
 </template>
 
 <script>
+	import {
+		get,
+		post
+	} from 'funcs/request'
+
 	export default {
 		data() {
 			return {
@@ -179,19 +186,19 @@
 				challengeLevelCustomStyle: {
 					color: "#1afa29"
 				},
-				
-				inputUserInfo:{
-					show:false
-					
+
+				inputUserInfo: {
+					show: false
+
 				},
 				userInfo: {
 					name: '',
 					age: '',
-					accountName:"",
-					accountPass:"",
+					accountName: "",
+					accountPass: "",
 				},
-				
-				rules:{
+
+				rules: {
 					'name': [{
 						required: true,
 						message: '请填写姓名',
@@ -206,11 +213,11 @@
 						message: '必须是数字',
 						trigger: ['blur', 'change']
 					}, {
-						transform:function(value){
+						transform: function(value) {
 							return Number(value)
 						},
 						type: 'number',
-						min:1,
+						min: 1,
 						max: 100,
 						message: '必须在1-100之间',
 						trigger: ['blur', 'change']
@@ -226,84 +233,91 @@
 						trigger: ['blur', 'change']
 					}]
 				},
-				dataAbout:{
-					waitShow:false,
-					gameUserCount:"有0位玩家完成挑战！您也快来吧",
-					leaveGameCountImgUrl:"/static/num0.png",
-					bestScore:"00:00",
-					bestRank:0,
-					userInfo:{}
+				dataAbout: {
+					waitShow: false,
+					gameUserCount: "有0位玩家完成挑战！您也快来吧",
+					leaveGameCountImgUrl: "/static/num0.png",
+					bestScore: "00:00",
+					bestRank: 0
+				},
+				loginError: {
+					message: "账号信息错误",
+					type: "error"
 				}
 			}
 		},
 		methods: {
-			submit(){
+			submit() {
 				// console.log(this.$refs.uForm.rules)
-				if (this.$refs.uForm.validate() == undefined){
+				if (this.$refs.uForm.validate() == undefined) {
 					this.$refs.uForm.setRules(this.rules)
 				}
 				this.$refs.uForm.validate().then(res => {
 					this.dataAbout.waitShow = true
-					uni.setStorageSync("userInfo",this.userInfo)
-					uni.request({
-						url: 'http://8.137.119.65:8888/user/info',
-						method: 'POST',
-						data: {},
-						success: res => {
-							uni.navigateTo({
-								url: '/pages/game/game',
-								success: res => {},
-								fail: () => {},
-								complete: () => {}
-							});
-						},
-						fail: () => {
-							alert("什么玩意儿")
-						},
-						complete: () => {
+					var data = {
+						"challengeId": 1,
+						"accountName": this.userInfo.accountName,
+						"accountPass": this.userInfo.accountPass,
+						"userName": this.userInfo.name,
+						"userAge": Number(this.userInfo.age),
+						"userHeadUrl": "https://pic35.photophoto.cn/20150511/0034034892281415_b.jpg"
+					}
+					post("/user/info", data)
+						.then(res => {
+							uni.setStorageSync("token", res.data.token)
+							uni.reLaunch({
+								url: '/pages/index/index'
+							})
+						})
+						.catch(error => {
+							this.$refs.uToast.show(this.loginError)
+						})
+						.finally(() => {
 							this.dataAbout.waitShow = false
-						}
-					});
+						})
 				})
 			},
-			rankClick(){
-				if (!this.isLogIn){
-					uni.navigateTo({
-						url: "/pages/rankList/rankList",
-						success: res => {},
-						fail: () => {},
-						complete: () => {}
-					});
-				}	
+			rankClick() {
+				uni.navigateTo({
+					url: "/pages/rankList/rankList"
+				});
+			},
+			gameButtonClick() {
+				uni.navigateTo({
+					url: "/pages/game/game"
+				});
 			}
 		},
-		onLoad() {
-			var userInfo = uni.getStorageSync("userInfo")
-			if (userInfo != undefined){
-				this.dataAbout.userInfo = userInfo
+		onShow() {
+			var token = uni.getStorageSync("token")
+			if (token != "") {
 				this.dataAbout.waitShow = true
 				// 请求接口获取一些数据
-				uni.request({
-					url: 'http://127.0.0.1:8888/index/data',
-					method: 'GET',
-					data: {},
-					success: res => {
-						// var data = res.data
-						var gameUserCount = 4
-						this.dataAbout.gameUserCount = `有${gameUserCount}位玩家完成挑战！您也快来吧`
-						var leaveGameCount = 3
-						this.dataAbout.leaveGameCountImgUrl  = `/static/num${leaveGameCount}.png`
-						var bestScore = 888
-						var m = String(Math.floor(bestScore / 60)).padStart(2, '0') 
-						var s = String(bestScore % 60).padStart(2, '0') 
+				get("/game/index", {}, {
+						'Authorization': 'Bearer ' + token
+					})
+					.then(data => {
+						this.dataAbout.gameUserCount = `有${data.data.gamerCount}位玩家完成挑战！您也快来吧`
+						this.dataAbout.leaveGameCountImgUrl = `/static/num${data.data.challengeNum}.png`
+						var bestScore = data.data.bestScore
+						var m = String(Math.floor(bestScore / 60)).padStart(2, '0')
+						var s = String(bestScore % 60).padStart(2, '0')
 						this.dataAbout.bestScore = `${m}:${s}`
-						this.dataAbout.bestRank = 12
-					},
-					fail: () => {},
-					complete: () => {
+						this.dataAbout.bestRank = data.data.bestRank
+					})
+					.catch(error => {
+						if (error == "未登录") {
+							uni.removeStorageSync("token")
+							uni.reLaunch({
+								url: "/pages/index/index"
+							})
+						}
+					})
+					.finally(() => {
 						this.dataAbout.waitShow = false
-					}
-				})
+					})
+			} else {
+				this.inputUserInfo.show = true
 			}
 		}
 	}
@@ -383,14 +397,15 @@
 	.startChallenge {
 		width: 650rpx;
 	}
-	
-	
-	.inputUserInfoContainier{
+
+
+	.inputUserInfoContainier {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 	}
-	.buttonContainer{
+
+	.buttonContainer {
 		margin-top: 30px;
 		width: 300rpx;
 	}

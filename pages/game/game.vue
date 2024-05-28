@@ -22,7 +22,8 @@
 		<u-popup :show="gameAbout.dataUploadShow" mode="center" :round="10" bgColor="transparent">
 			<u-loading-icon text="数据上传中" :vertical="true" size="100rpx" textSize="50rpx"></u-loading-icon>
 		</u-popup>
-		<u-popup :show="gameAbout.cantPlayShow" mode="center" :round="10" bgColor="transparent" @close="gameAbout.cantPlayShow = false">
+		<u-popup :show="gameAbout.cantPlayShow" mode="center" :round="10" bgColor="transparent"
+			@close="gameAbout.cantPlayShow = false">
 			<view class="cantPlayShow">
 				<view class="cantPlayShowIcon">
 					<u-icon name="/static/kuLian.png" width="30px" height="30px"></u-icon>
@@ -39,6 +40,7 @@
 </template>
 
 <script>
+	import { get,post } from '../../funcs/request';
 	export default {
 		data() {
 			return {
@@ -64,32 +66,16 @@
 					spendTimeStr: "00:00",
 					interval: undefined,
 					startButtonDisable: false,
-					dataUploadShow:false,
-					cantPlayShow:false,
-					waitShow:false,
+					dataUploadShow: false,
+					cantPlayShow: false,
+					waitShow: false,
 				}
 			};
 		},
 		methods: {
 			start() {
-				this.gameAbout.cantPlayShow = true
-				// var userInfo = uni.getStorageSync("userInfo")
-				// uni.request({
-				// 	url: 'http://8.137.119.65:8888/game/canPlay',
-				// 	method: 'GET',
-				// 	data: {
-				// 		"accountName":userInfo.accountName
-				// 	},
-				// 	success: res => {
-				// 		this.gameAbout.startButtonDisable = true
-				// 		this.initInterval()
-				// 	},
-				// 	fail: () => {
-				// 		this.gameAbout.cantPlayShow = true
-				// 	},
-				// 	complete: () => {}
-				// });
-				this.gameAbout.waitShow = false
+				this.gameAbout.startButtonDisable = true
+				this.initInterval()
 			},
 			clickButton(value) {
 				if (this.interval == undefined || value != this.gameAbout.lastNum + 1) {
@@ -102,8 +88,33 @@
 				if (value == this.gameAbout.maxNum) {
 					// 成功了
 					this.gameAbout.dataUploadShow = true
+					this.clearInterval()
 					
-					return
+					var token = uni.getStorageSync("token")
+
+					post("/game/info", {
+							"score": (this.gameAbout.spendMinute * 60 + this.gameAbout.spendSecond)
+						}, {
+							'Authorization': 'Bearer ' + token
+						})
+						.then(res => {
+							uni.redirectTo({
+								url: '/pages/index/index',
+							});
+						})
+						.catch(error => {
+							if (error == "未登录") {
+								uni.removeStorageSync("token")
+							} else {
+								this.gameAbout.cantPlayShow = true
+							}
+							uni.reLaunch({
+								url: "/pages/index/index"
+							})
+						})
+						.finally(() => {
+							this.gameAbout.dataUploadShow = false
+						})
 				}
 			},
 			initGridData(num) {
@@ -147,15 +158,12 @@
 				this.gameAbout.spendTimeStr = `${m}:${s}`
 			}
 		},
-		onLoad() {
-			var userInfo = uni.getStorageSync("userInfo")
-			if (userInfo == undefined){
+		onShow() {
+			var token = uni.getStorageSync("token")
+			if (token == "") {
 				uni.redirectTo({
-					url: '/pages/index/index',
-					success: res => {},
-					fail: () => {},
-					complete: () => {}
-				});
+					url: '/pages/index/index'
+				})
 			}
 			this.initGridData(5)
 		},
@@ -194,8 +202,8 @@
 		margin-top: 100rpx;
 		width: 600rpx;
 	}
-	
-	.cantPlayShow{
+
+	.cantPlayShow {
 		width: 500rpx;
 		height: 35px;
 		display: flex;
@@ -203,10 +211,10 @@
 		justify-content: center;
 		align-items: center;
 	}
-	.cantPlayShowIcon{
+
+	.cantPlayShowIcon {
 		margin-right: 30rpx;
 	}
-	.cantPlayShowText{
-		
-	}
+
+	.cantPlayShowText {}
 </style>
