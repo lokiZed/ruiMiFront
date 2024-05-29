@@ -1,53 +1,62 @@
 <template>
 	<view>
-		<!-- 如果页面中的cell高度是固定不变的，则不需要设置cell-height-mode，如果页面中高度是动态改变的，则设置cell-height-mode="dynamic" -->
-		<z-paging ref="paging" use-virtual-list cell-height-mode="dynamic" @query="queryList" class="container">
-			<!-- 需要固定在顶部不滚动的view放在slot="top"的view中，如果需要跟着滚动，则不要设置slot="top" -->
-
-			<!-- 如果希望其他view跟着页面滚动，可以放在z-paging标签内，放在所有cell上方的用slot="header"插入，放在所有cell下方的用slot="footer"插入 -->
-
-			<!-- 通过slot="cell"插入列表for循环的cell，slot-scope中提供当前for循环的item和index -->
-			<!-- vue2/3中写法如下 -->
-
-			<!-- <block v-for="(item,index) in topList" :key="index">
+		
+		<view>
+			<!-- 如果页面中的cell高度是固定不变的，则不需要设置cell-height-mode，如果页面中高度是动态改变的，则设置cell-height-mode="dynamic" -->
+			<z-paging ref="paging" use-virtual-list cell-height-mode="dynamic" @query="queryList" class="container">
 				<view slot="top">
+					<uni-nav-bar shadow left-icon="left" height="50px" title="舒尔特挑战赛" @clickLeft="back" />
+				</view>
+				
+				<!-- 需要固定在顶部不滚动的view放在slot="top"的view中，如果需要跟着滚动，则不要设置slot="top" -->
+
+				<!-- 如果希望其他view跟着页面滚动，可以放在z-paging标签内，放在所有cell上方的用slot="header"插入，放在所有cell下方的用slot="footer"插入 -->
+
+				<!-- 通过slot="cell"插入列表for循环的cell，slot-scope中提供当前for循环的item和index -->
+				<!-- vue2/3中写法如下 -->
+
+				<!-- <block v-for="(item,index) in topList" :key="index">
+					<view slot="top">
+						<view class="item" @click="itemClick(item,index)">
+							<view class="item-rank">
+								<u-icon size="100rpx" :name="`../../static/rank${index+1}.png`"></u-icon>
+							</view>
+							<view class="item-avator">
+								<u--image shape="circle" width="100rpx" height="100rpx" :src="item.headUrl"></u--image>
+							</view>
+							<view class="item-name">
+								<text>{{item.name}}</text>
+							</view>
+							<view class="item-score">
+								<text>{{item.score}}</text>
+							</view>
+						</view>
+					</view>
+				</block> -->
+
+				<template #cell="{item,index}">
 					<view class="item" @click="itemClick(item,index)">
 						<view class="item-rank">
-							<u-icon size="100rpx" :name="`/static/rank${index+1}.png`"></u-icon>
+							<u-icon size="100rpx" :name="`../../static/rank${index < 3 ? index+1 : 4}.png`"></u-icon>
 						</view>
 						<view class="item-avator">
 							<u--image shape="circle" width="100rpx" height="100rpx" :src="item.headUrl"></u--image>
 						</view>
 						<view class="item-name">
-							<text>{{item.name}}</text>
+							<text>{{item.userName}}</text>
+						</view>
+						<view class="item-age">
+							<text>{{item.userAge}}岁</text>
 						</view>
 						<view class="item-score">
 							<text>{{item.score}}</text>
 						</view>
 					</view>
-				</view>
-			</block> -->
+				</template>
+			</z-paging>
 
-			<template #cell="{item,index}">
-				<view class="item" @click="itemClick(item,index)">
-					<view class="item-rank">
-						<u-icon size="100rpx" :name="`/static/rank${index < 3 ? index+1 : 4}.png`"></u-icon>
-					</view>
-					<view class="item-avator">
-						<u--image shape="circle" width="100rpx" height="100rpx" :src="item.headUrl"></u--image>
-					</view>
-					<view class="item-name">
-						<text>{{item.userName}}</text>
-					</view>
-					<view class="item-age">
-						<text>{{item.userAge}}岁</text>
-					</view>
-					<view class="item-score">
-						<text>{{item.score}}</text>
-					</view>
-				</view>
-			</template>
-		</z-paging>
+		</view>
+		
 		<u-popup :show="dataAbout.waitShow" mode="center" :round="10" bgColor="transparent">
 			<u-loading-icon text="加载中" :vertical="true" size="100rpx" textSize="50rpx"></u-loading-icon>
 		</u-popup>
@@ -102,21 +111,31 @@
 						this.dataAbout.waitShow = false
 					})
 			},
-			onShow() {
-				var token = uni.getStorageSync("token")
-				if (token == "") {
-					uni.redirectTo({
-						url: '/pages/index/index'
-					})
-				}
-			}
+			back() {
+				uni.redirectTo({
+					url: '/pages/index/index',
+				})
+			},
 		},
+		onShow() {
+			uni.getSystemInfo({
+				success: (res) => {
+					this.deviceAbout.height = res.screenHeight
+				}
+			})
+			var token = uni.getStorageSync("token")
+			if (token == "") {
+				uni.redirectTo({
+					url: '/pages/index/index'
+				})
+			}
+		}
 	}
 </script>
 
 <style lang="scss">
 	.container {
-		background-image: linear-gradient(to bottom, rgb(234, 229, 201),rgb(108, 198, 203))
+		background-image: linear-gradient(to bottom, rgb(234, 229, 201), rgb(108, 198, 203))
 	}
 
 	.item {

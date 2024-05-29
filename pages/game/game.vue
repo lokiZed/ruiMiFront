@@ -1,6 +1,7 @@
 <template>
 	<view>
-		<view class="gameContainer">
+		<uni-nav-bar shadow left-icon="left" height="50px" title="舒尔特挑战赛" @clickLeft="back" />
+		<view class="gameContainer" :style="{'height':String(deviceAbout.height - 50) + 'px'}">
 			<view class="spendTime">
 				<text>{{gameAbout.spendTimeStr}}</text>
 			</view>
@@ -17,7 +18,9 @@
 				<u-button type="primary" shape="circle" text="开始" :disabled="gameAbout.startButtonDisable"
 					color="linear-gradient(to right, rgb(66, 83, 216), rgb(213, 51, 186))" @click="start"></u-button>
 			</view>
-
+			<view class="rules">
+				<text @click="gameAbout.ruleShow = true" style="color: blue;">规则</text>
+			</view>
 		</view>
 		<u-popup :show="gameAbout.dataUploadShow" mode="center" :round="10" bgColor="transparent">
 			<u-loading-icon text="数据上传中" :vertical="true" size="100rpx" textSize="50rpx"></u-loading-icon>
@@ -26,7 +29,7 @@
 			@close="gameAbout.cantPlayShow = false">
 			<view class="cantPlayShow">
 				<view class="cantPlayShowIcon">
-					<u-icon name="/static/kuLian.png" width="30px" height="30px"></u-icon>
+					<u-icon name="../../static/kuLian.png" width="30px" height="30px"></u-icon>
 				</view>
 				<view class="cantPlayShowText">
 					<u--text text="参赛机会已用完" size="25px" color="red"></u--text>
@@ -36,16 +39,40 @@
 		<u-popup :show="gameAbout.waitShow" mode="center" :round="10" bgColor="transparent">
 			<u-loading-icon text="加载中" :vertical="true" size="100rpx" textSize="50rpx"></u-loading-icon>
 		</u-popup>
+		<u-popup :show="gameAbout.ruleShow" mode="center" :round="10" @close="gameAbout.ruleShow = false"
+			:customStyle="ruleShowStyle">
+			<view class="ruleShow">
+				<view>
+					<u--text type="info" text="从小到大依次点击数字对应的方格" size="25px"></u--text>
+				</view>
+				<view>
+					<u--text type="info" text="点击正确方格以绿色提示" size="25px"></u--text>
+				</view>
+				<view>
+					<u--text type="info" text="点击错误方格以红色提示" size="25px"></u--text>
+				</view>
+				<view>
+					<u--text type="info" text="挑战次数为0后依然可以进行游戏" size="25px"></u--text>
+				</view>
+				<view>
+					<u--text type="info" text="但是提交成绩时会提示错误" size="25px"></u--text>
+				</view>
+			</view>
+		</u-popup>
 	</view>
 </template>
 
 <script>
-	import { get,post } from '../../funcs/request';
+	import {
+		get,
+		post
+	} from '../../funcs/request';
 	export default {
 		data() {
 			return {
 				buttonUnSelectColor: "#ffffff",
-				buttonSelectColor: "#55ff00",
+				buttonSelectRightColor: "#55ff00",
+				buttonSelectWrongColor: "#ec0000",
 				gridData: [],
 				gridCustomStyle: {
 					width: "120rpx",
@@ -58,6 +85,9 @@
 					color: "#ffaa00",
 					backgroundColor: this.buttonUnSelectColor
 				},
+				ruleShowStyle: {
+					height: "230px"
+				},
 				gameAbout: {
 					maxNum: 0,
 					lastNum: 0,
@@ -69,27 +99,39 @@
 					dataUploadShow: false,
 					cantPlayShow: false,
 					waitShow: false,
+					ruleShow: false
+				},
+				deviceAbout: {
+					height: 1
 				}
 			};
 		},
 		methods: {
 			start() {
 				this.gameAbout.startButtonDisable = true
+				this.initGridData(5)
 				this.initInterval()
 			},
 			clickButton(value) {
-				if (this.interval == undefined || value != this.gameAbout.lastNum + 1) {
-					// 未开始或者点击的数字不对 直接返回
+				if (this.interval == undefined) {
 					return
 				}
-				this.gameAbout.lastNum = value
 				var element = this.$refs['button' + value]
-				element[0].color = this.buttonSelectColor
-				if (value == this.gameAbout.maxNum) {
+				if (value != this.gameAbout.lastNum + 1) {
+					element[0].color = this.buttonSelectWrongColor
+				} else {
+					element[0].color = this.buttonSelectRightColor
+					this.gameAbout.lastNum = value
+				}
+				console.log(value,this.gameAbout.lastNum,this.gameAbout.maxNum)
+				setTimeout(() => {
+					element[0].color = this.buttonUnSelectColor;
+				}, 200);
+				if (this.gameAbout.lastNum == this.gameAbout.maxNum) {
 					// 成功了
 					this.gameAbout.dataUploadShow = true
 					this.clearInterval()
-					
+
 					var token = uni.getStorageSync("token")
 
 					post("/game/info", {
@@ -107,10 +149,13 @@
 								uni.removeStorageSync("token")
 							} else {
 								this.gameAbout.cantPlayShow = true
+								setTimeout(function() {
+									uni.reLaunch({
+										url: "/pages/index/index"
+									})
+								}, 1000);
 							}
-							uni.reLaunch({
-								url: "/pages/index/index"
-							})
+
 						})
 						.finally(() => {
 							this.gameAbout.dataUploadShow = false
@@ -118,6 +163,7 @@
 				}
 			},
 			initGridData(num) {
+				this.gameAbout.maxNum = 0
 				// 填充数据数组
 				var gridData = []
 				for (let i = 0; i < num; i++) {
@@ -156,9 +202,19 @@
 				let m = String(this.gameAbout.spendMinute).padStart(2, '0');
 				let s = String(this.gameAbout.spendSecond).padStart(2, '0');
 				this.gameAbout.spendTimeStr = `${m}:${s}`
-			}
+			},
+			back() {
+				uni.redirectTo({
+					url: '/pages/index/index',
+				})
+			},
 		},
 		onShow() {
+			uni.getSystemInfo({
+				success: (res) => {
+					this.deviceAbout.height = res.screenHeight
+				}
+			})
 			var token = uni.getStorageSync("token")
 			if (token == "") {
 				uni.redirectTo({
@@ -179,9 +235,8 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		height: 95vh;
-		width: 600rpx;
-		margin-left: 75rpx;
+		height: 100vh;
+		// margin-left: 75rpx;
 	}
 
 	.spendTime {
@@ -190,6 +245,7 @@
 
 	.gameMap {
 		background-color: #ff8a53;
+		width: 600rpx;
 	}
 
 	.spendTime {
@@ -204,8 +260,6 @@
 	}
 
 	.cantPlayShow {
-		width: 500rpx;
-		height: 35px;
 		display: flex;
 		flex-direction: row;
 		justify-content: center;
@@ -217,4 +271,22 @@
 	}
 
 	.cantPlayShowText {}
+
+	.rules {
+		margin-top: 25px;
+	}
+	.ruleShow{
+		font-family: 'myFont', sans-serif;
+		height: 230px;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		align-items: flex-start;
+	}
+	@font-face {
+		font-family: 'myFont';
+		src: url('../../static/ziti.ttf') format('truetype');
+		font-weight: normal;
+		font-style: normal;
+	}
 </style>

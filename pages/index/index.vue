@@ -1,14 +1,20 @@
 <template>
 	<view>
-		<view class="mainContainer">
+		<uni-nav-bar shadow height="50px" title="舒尔特挑战赛" />
+		<view class="mainContainer" :style="{'height':String(deviceAbout.height - 50) + 'px'}">
 			<view class="topTitle">
 				<u--image class="topTitleImg1" :showLoading="topTitleImg1.imgShowLoading" :src="topTitleImg1.imgSrc"
 					:width="topTitleImg1.imgWidth" :height="topTitleImg1.imgHeight"></u--image>
-				<u--text text="睿米心身" :bold="true" color="#ffffff" size="35px"></u--text>
+				<u--image class="topTitleImg2" :showLoading="topTitleImg2.imgShowLoading" :src="topTitleImg2.imgSrc"
+					:width="topTitleImg2.imgWidth" :height="topTitleImg2.imgHeight"></u--image>
+				<!-- <svg width="200" height="100">  
+				  <text x="50" y="50" fill="white" stroke="black" stroke-width="2">睿米心身</text>  
+				</svg> -->
+				<!-- <u--text text="睿米心身" :bold="true" color="#ffffff" size="35px"></u--text> -->
 			</view>
 			<view class="challengeName">
-				<u--text text="专注大神" :bold="true" color="#ffffff" size="30px"></u--text>
-				<u--text text="挑战赛" :bold="true" color="#ffc800" size="40px"></u--text>
+				<text class="challengeNameGod">专注大神</text>
+				<text class="challengeNameGame">挑战赛</text>
 			</view>
 			<view class="challengeLevel">
 				<u-button :shape="challengeLevel.shape" :color="challengeLevel.color" :icon="challengeLevel.iconUrl"
@@ -55,6 +61,10 @@
 		</view>
 		<u-popup :show="inputUserInfo.show">
 			<view class="inputUserInfoContainier">
+				<view>
+					<u-upload accept="image" :fileList="avatarList" uploadText="选择头像" maxCount=1
+						:previewFullImage="true" @afterRead="afterAvatarRead" @delete="avatarDelete"></u-upload>
+				</view>
 				<view class="form">
 					<u--form labelPosition="left" :model="userInfo" ref="uForm">
 						<u-form-item label="账号" prop="accountName" borderBottom>
@@ -86,7 +96,8 @@
 <script>
 	import {
 		get,
-		post
+		post,
+		BASE_FIlE_URL
 	} from 'funcs/request'
 
 	export default {
@@ -94,12 +105,18 @@
 			return {
 				topTitleImg1: {
 					imgShowLoading: true,
-					imgSrc: "/static/ruiMi.png",
+					imgSrc: "../../static/ruiMi.png",
 					imgWidth: "40px",
 					imgHeight: "40px",
 				},
+				topTitleImg2: {
+					imgShowLoading: true,
+					imgSrc: "../../static/ruiMiText.png",
+					imgWidth: "160px",
+					imgHeight: "43px",
+				},
 				challengeLevel: {
-					iconUrl: "/static/nanDu1.png",
+					iconUrl: "../../static/nanDu1.png",
 					shape: "circle",
 					text: "初阶",
 					color: "linear-gradient(to right, rgb(66, 83, 216), rgb(213, 51, 186))"
@@ -111,8 +128,8 @@
 				},
 				myChallengeInfo: {
 					imgShowLoading: true,
-					bestScoreImgSrc: "/static/chengJi.png",
-					bestRankImgSrc: "/static/paiMing.png",
+					bestScoreImgSrc: "../../static/chengJi.png",
+					bestRankImgSrc: "../../static/paiMing.png",
 					imgWidth: "30px",
 					imgHeight: "30px",
 
@@ -194,41 +211,84 @@
 					bestScore: "00:00",
 					bestRank: 0
 				},
+				deviceAbout: {
+					height: 1
+				},
+				avatarList: [],
 				loginError: {
 					message: "账号信息错误",
+					type: "error"
+				},
+				avatarError: {
+					message: "请上传头像",
+					type: "error"
+				},
+				avatarUploadError: {
+					message: "头像上传失败",
 					type: "error"
 				}
 			}
 		},
 		methods: {
 			submit() {
-				// console.log(this.$refs.uForm.rules)
+				if (this.avatarList.length == 0) {
+					this.$refs.uToast.show(this.avatarError)
+					return
+				}
 				if (this.$refs.uForm.validate() == undefined) {
 					this.$refs.uForm.setRules(this.rules)
 				}
 				this.$refs.uForm.validate().then(res => {
 					this.dataAbout.waitShow = true
-					var data = {
-						"challengeId": 1,
-						"accountName": this.userInfo.accountName,
-						"accountPass": this.userInfo.accountPass,
-						"userName": this.userInfo.name,
-						"userAge": Number(this.userInfo.age),
-						"userHeadUrl": "https://pic35.photophoto.cn/20150511/0034034892281415_b.jpg"
+					// 上传头像
+					var avatarLocalUrl = this.avatarList[0].url
+
+					var uploadOk = true
+					var fileHash = ""
+					var uploadTask = uni.uploadFile({
+						url: BASE_FIlE_URL + "/file/avatar",
+						filePath: avatarLocalUrl,
+						name: "file",
+						formData: {
+							'from': "ruiMi"
+						},
+						success: (res) => {
+							if (res.statusCode != 200) {
+								uploadOk = false
+							} else {
+								fileHash = JSON.parse(res.data).fileHash
+								// 上传数据
+								var data = {
+									"challengeId": 1,
+									"accountName": this.userInfo.accountName,
+									"accountPass": this.userInfo.accountPass,
+									"userName": this.userInfo.name,
+									"userAge": Number(this.userInfo.age),
+									"userHeadUrl": fileHash
+								}
+								post("/user/info", data)
+									.then(res => {
+										uni.setStorageSync("token", res.data.token)
+										uni.reLaunch({
+											url: '/pages/index/index'
+										})
+									})
+									.catch(error => {
+										this.$refs.uToast.show(this.loginError)
+									})
+									.finally(() => {
+										this.dataAbout.waitShow = false
+									})
+							}
+						},
+						fail: (error) => {
+							uploadOk = false
+						}
+					})
+					if (!uploadOk) {
+						this.$refs.uToast.show(this.avatarUploadError)
+						return
 					}
-					post("/user/info", data)
-						.then(res => {
-							uni.setStorageSync("token", res.data.token)
-							uni.reLaunch({
-								url: '/pages/index/index'
-							})
-						})
-						.catch(error => {
-							this.$refs.uToast.show(this.loginError)
-						})
-						.finally(() => {
-							this.dataAbout.waitShow = false
-						})
 				})
 			},
 			rankClick() {
@@ -240,9 +300,22 @@
 				uni.navigateTo({
 					url: "/pages/game/game"
 				});
+			},
+			afterAvatarRead(event) {
+				this.avatarList.push({
+					"url": event.file.url
+				})
+			},
+			avatarDelete(event) {
+				this.avatarList.pop()
 			}
 		},
 		onShow() {
+			uni.getSystemInfo({
+				success: (res) => {
+					this.deviceAbout.height = res.screenHeight
+				}
+			})
 			var token = uni.getStorageSync("token")
 			if (token != "") {
 				this.dataAbout.waitShow = true
@@ -283,9 +356,8 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: space-between;
-		height: 93vh;
 		/* background-color: blue; */
-		background-image: linear-gradient(to bottom, rgba(0, 0, 255, 0.5), rgba(124, 255, 2, 0.5)),
+		background-image: linear-gradient(to bottom, rgba(243, 196, 216, 0.5), rgba(161, 152, 245, 0.5)),
 			url("../../static/bg.png");
 		background-position: center;
 		background-size: cover;
@@ -309,8 +381,19 @@
 		display: flex;
 		flex-direction: row;
 		align-items: center;
-		/* margin-top: 150rpx; */
 		font-family: 'myFont', sans-serif;
+	}
+
+	.challengeNameGod {
+		font-size: 30px;
+		font-weight: bold;
+		color: #ffffff;
+	}
+
+	.challengeNameGame {
+		font-size: 60px;
+		font-weight: bold;
+		color: #ffc800;
 	}
 
 	.challengeLevel {
@@ -375,6 +458,7 @@
 		display: flex;
 		flex-direction: row;
 		align-items: center;
+		justify-content: flex-end;
 		height: 80px;
 		width: 300rpx;
 	}
@@ -390,7 +474,7 @@
 	}
 
 	.bestScore {
-		margin-right: 50rpx;
+		/* margin-right: 50rpx; */
 	}
 
 	.bestRank {}
