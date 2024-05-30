@@ -1,4 +1,5 @@
 const BASE_URL = 'http://8.137.119.65:8888';
+// const BASE_URL = 'http://127.0.0.1:8888';
 const BASE_FIlE_URL = "http://8.137.119.65:8889"
 // const BASE_FIlE_URL = "http://127.0.0.1:8889"
 
